@@ -1,14 +1,11 @@
 'use client';
 
 import { useState, useCallback, useMemo } from 'react';
-import dynamic from 'next/dynamic';
 import Upload from '@/components/Upload';
 import CodeViewer from '@/components/CodeViewer';
 import ChatPanel from '@/components/ChatPanel';
+import Graph from '@/components/Graph';
 import { CobolFile, buildGraphData, GraphData } from '@/lib/cobolParser';
-
-// Dynamic import for React Flow (SSR causes issues)
-const Graph = dynamic(() => import('@/components/Graph'), { ssr: false });
 
 export default function Home() {
   const [files, setFiles] = useState<CobolFile[]>([]);
@@ -17,6 +14,7 @@ export default function Home() {
   const [explanation, setExplanation] = useState<string | null>(null);
   const [isExplaining, setIsExplaining] = useState(false);
   const [rightPanel, setRightPanel] = useState<'code' | 'chat'>('code');
+  const [apiKey, setApiKey] = useState<string>('');
 
   // Build graph whenever files change
   const graphData: GraphData = useMemo(() => buildGraphData(files), [files]);
@@ -58,13 +56,17 @@ export default function Home() {
   );
 
   const handleExplain = useCallback(async (code: string) => {
+    if (!apiKey) {
+      setExplanation('⚠️ Please enter your Gemini API Key in the top right corner.');
+      return;
+    }
     setIsExplaining(true);
     setExplanation(null);
     try {
       const res = await fetch('/api/explain', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ code }),
+        body: JSON.stringify({ code, apiKey }),
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error);
@@ -97,6 +99,13 @@ export default function Home() {
         </div>
 
         <div className="flex items-center gap-3">
+          <input
+            type="password"
+            placeholder="Gemini API Key"
+            value={apiKey}
+            onChange={(e) => setApiKey(e.target.value)}
+            className="w-48 px-3 py-1.5 text-xs bg-surface border border-border rounded-lg text-foreground placeholder:text-text-muted focus:outline-none focus:border-accent"
+          />
           {/* Stats Badges */}
           {files.length > 0 && (
             <div className="hidden md:flex items-center gap-2">
@@ -225,6 +234,7 @@ export default function Home() {
               <ChatPanel
                 selectedCode={selectedFile?.content || null}
                 selectedFileName={selectedFile?.name || null}
+                apiKey={apiKey}
               />
             )}
           </div>

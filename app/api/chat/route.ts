@@ -1,9 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { chatAboutCode } from '@/lib/openai';
+import { chatAboutCode } from '@/lib/gemini';
 
 export async function POST(req: NextRequest) {
   try {
-    const { question, code } = await req.json();
+    const { question, code, apiKey } = await req.json();
 
     if (!question || typeof question !== 'string') {
       return NextResponse.json(
@@ -26,14 +26,14 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    if (!process.env.OPENAI_API_KEY) {
+    if (!apiKey || typeof apiKey !== 'string') {
       return NextResponse.json(
-        { error: 'OpenAI API key not configured. Set OPENAI_API_KEY in environment variables.' },
-        { status: 500 }
+        { error: 'Gemini API key is required. Please set it in the top right corner.' },
+        { status: 401 }
       );
     }
 
-    const answer = await chatAboutCode(question, code);
+    const answer = await chatAboutCode(question, code, apiKey);
     return NextResponse.json({ answer });
   } catch (error: unknown) {
     console.error('Chat API error:', error);

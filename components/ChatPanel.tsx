@@ -10,9 +10,10 @@ interface Message {
 interface ChatPanelProps {
   selectedCode: string | null;
   selectedFileName: string | null;
+  apiKey: string;
 }
 
-export default function ChatPanel({ selectedCode, selectedFileName }: ChatPanelProps) {
+export default function ChatPanel({ selectedCode, selectedFileName, apiKey }: ChatPanelProps) {
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
@@ -49,7 +50,7 @@ export default function ChatPanel({ selectedCode, selectedFileName }: ChatPanelP
       const res = await fetch('/api/chat', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ question, code: selectedCode }),
+        body: JSON.stringify({ question, code: selectedCode, apiKey }),
       });
 
       const data = await res.json();

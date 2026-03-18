@@ -1,9 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { explainCode } from '@/lib/openai';
+import { explainCode } from '@/lib/gemini';
 
 export async function POST(req: NextRequest) {
   try {
-    const { code } = await req.json();
+    const { code, apiKey } = await req.json();
 
     if (!code || typeof code !== 'string') {
       return NextResponse.json(
@@ -19,14 +19,14 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    if (!process.env.OPENAI_API_KEY) {
+    if (!apiKey || typeof apiKey !== 'string') {
       return NextResponse.json(
-        { error: 'OpenAI API key not configured. Set OPENAI_API_KEY in environment variables.' },
-        { status: 500 }
+        { error: 'Gemini API key is required. Please set it in the top right corner.' },
+        { status: 401 }
       );
     }
 
-    const explanation = await explainCode(code);
+    const explanation = await explainCode(code, apiKey);
     return NextResponse.json({ explanation });
   } catch (error: unknown) {
     console.error('Explain API error:', error);
