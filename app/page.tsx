@@ -14,7 +14,9 @@ export default function Home() {
   const [explanation, setExplanation] = useState<string | null>(null);
   const [isExplaining, setIsExplaining] = useState(false);
   const [rightPanel, setRightPanel] = useState<'code' | 'chat'>('code');
+  const [apiKeyInput, setApiKeyInput] = useState<string>('');
   const [apiKey, setApiKey] = useState<string>('');
+  const [apiKeySaved, setApiKeySaved] = useState(false);
 
   // Build graph whenever files change
   const graphData: GraphData = useMemo(() => buildGraphData(files), [files]);
@@ -55,9 +57,16 @@ export default function Home() {
     [files]
   );
 
+  const handleSaveApiKey = useCallback(() => {
+    const trimmed = apiKeyInput.trim();
+    if (!trimmed) return;
+    setApiKey(trimmed);
+    setApiKeySaved(true);
+  }, [apiKeyInput]);
+
   const handleExplain = useCallback(async (code: string) => {
     if (!apiKey) {
-      setExplanation('⚠️ Please enter your Gemini API Key in the top right corner.');
+      setExplanation('⚠️ Please enter and save your Gemini API Key in the top right corner.');
       return;
     }
     setIsExplaining(true);
@@ -77,7 +86,7 @@ export default function Home() {
     } finally {
       setIsExplaining(false);
     }
-  }, []);
+  }, [apiKey]);
 
   return (
     <div className="h-screen flex flex-col bg-background">
@@ -99,13 +108,42 @@ export default function Home() {
         </div>
 
         <div className="flex items-center gap-3">
-          <input
-            type="password"
-            placeholder="Gemini API Key"
-            value={apiKey}
-            onChange={(e) => setApiKey(e.target.value)}
-            className="w-48 px-3 py-1.5 text-xs bg-surface border border-border rounded-lg text-foreground placeholder:text-text-muted focus:outline-none focus:border-accent"
-          />
+          {/* API Key input + save */}
+          <div className="flex items-center gap-1.5">
+            <div className="relative">
+              <input
+                type="password"
+                placeholder="Gemini API Key"
+                value={apiKeyInput}
+                onChange={(e) => {
+                  setApiKeyInput(e.target.value);
+                  setApiKeySaved(false);
+                }}
+                onKeyDown={(e) => e.key === 'Enter' && handleSaveApiKey()}
+                className={`w-48 px-3 py-1.5 text-xs bg-surface border rounded-lg text-foreground placeholder:text-text-muted focus:outline-none transition-all ${
+                  apiKeySaved
+                    ? 'border-success focus:border-success'
+                    : 'border-border focus:border-accent'
+                }`}
+              />
+            </div>
+            {apiKeySaved ? (
+              <div className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-success/15 border border-success/40 text-success text-xs font-semibold">
+                <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
+                </svg>
+                Saved
+              </div>
+            ) : (
+              <button
+                onClick={handleSaveApiKey}
+                disabled={!apiKeyInput.trim()}
+                className="px-3 py-1.5 text-xs rounded-lg bg-accent hover:bg-accent-hover text-white font-semibold transition-all disabled:opacity-30 disabled:cursor-not-allowed shadow-sm shadow-accent/20"
+              >
+                Save Key
+              </button>
+            )}
+          </div>
           {/* Stats Badges */}
           {files.length > 0 && (
             <div className="hidden md:flex items-center gap-2">
